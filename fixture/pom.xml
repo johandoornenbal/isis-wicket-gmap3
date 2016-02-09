@@ -67,6 +67,12 @@ language governing permissions and limitations under the License.
             <artifactId>objenesis</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.12</version>
+		</dependency>
     </dependencies>
 
 
