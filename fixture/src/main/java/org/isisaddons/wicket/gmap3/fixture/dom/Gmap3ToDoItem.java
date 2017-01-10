@@ -18,8 +18,9 @@
  */
 package org.isisaddons.wicket.gmap3.fixture.dom;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -35,6 +36,8 @@ import javax.jdo.annotations.VersionStrategy;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Ordering;
+import com.google.common.io.ByteSource;
+import com.google.common.io.Resources;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
@@ -83,24 +86,24 @@ import org.isisaddons.wicket.gmap3.cpt.service.LocationLookupService;
     @javax.jdo.annotations.Query(
             name = "todo_all",
             value = "SELECT "
-                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3WicketToDoItem "
+                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3ToDoItem "
                     + "WHERE ownedBy == :ownedBy"),
     @javax.jdo.annotations.Query(
             name = "todo_notYetComplete",
             value = "SELECT "
-                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3WicketToDoItem "
+                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3ToDoItem "
                     + "WHERE ownedBy == :ownedBy "
                     + "   && complete == false"),
     @javax.jdo.annotations.Query(
             name = "todo_complete",
             value = "SELECT "
-                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3WicketToDoItem "
+                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3ToDoItem "
                     + "WHERE ownedBy == :ownedBy "
                     + "&& complete == true"),
     @javax.jdo.annotations.Query(
             name = "todo_autoComplete",
             value = "SELECT "
-                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3WicketToDoItem "
+                    + "FROM org.isisaddons.wicket.gmap3.fixture.dom.Gmap3ToDoItem "
                     + "WHERE ownedBy == :ownedBy && "
                     + "description.indexOf(:description) >= 0")
 })
@@ -112,7 +115,7 @@ import org.isisaddons.wicket.gmap3.cpt.service.LocationLookupService;
         named = "ToDo Item",
         bookmarking = BookmarkPolicy.AS_ROOT
 )
-public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Locatable, Routeable {
+public class Gmap3ToDoItem implements Comparable<Gmap3ToDoItem>, Locatable, Routeable {
 
     //region > identification in the UI
 
@@ -188,7 +191,7 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     }
 
     @MemberOrder(name="complete", sequence="1")
-    public Gmap3WicketToDoItem completed() {
+    public Gmap3ToDoItem completed() {
         setComplete(true);
         return this;
     }
@@ -198,7 +201,7 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     }
 
     @MemberOrder(name="complete", sequence="2")
-    public Gmap3WicketToDoItem notYetCompleted() {
+    public Gmap3ToDoItem notYetCompleted() {
         setComplete(false);
 
         return this;
@@ -229,7 +232,7 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     }
 
     @MemberOrder(name="location", sequence="1")
-    public Gmap3WicketToDoItem updateLocation(
+    public Gmap3ToDoItem updateLocation(
             @ParameterLayout(named="Address") final String address) {
         final Location location = this.locationLookupService.lookup(address);
         setLocation(location);
@@ -241,16 +244,16 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     //region > dependencies (collection), add (action), remove (action)
 
     // overrides the natural ordering
-    public static class DependenciesComparator implements Comparator<Gmap3WicketToDoItem> {
+    public static class DependenciesComparator implements Comparator<Gmap3ToDoItem> {
         @Override
-        public int compare(final Gmap3WicketToDoItem p, final Gmap3WicketToDoItem q) {
-            final Ordering<Gmap3WicketToDoItem> byDescription = new Ordering<Gmap3WicketToDoItem>() {
-                public int compare(final Gmap3WicketToDoItem p, final Gmap3WicketToDoItem q) {
+        public int compare(final Gmap3ToDoItem p, final Gmap3ToDoItem q) {
+            final Ordering<Gmap3ToDoItem> byDescription = new Ordering<Gmap3ToDoItem>() {
+                public int compare(final Gmap3ToDoItem p, final Gmap3ToDoItem q) {
                     return Ordering.natural().nullsFirst().compare(p.getDescription(), q.getDescription());
                 }
             };
             return byDescription
-                    .compound(Ordering.<Gmap3WicketToDoItem>natural())
+                    .compound(Ordering.<Gmap3ToDoItem>natural())
                     .compare(p, q);
         }
     }
@@ -260,41 +263,41 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     @javax.jdo.annotations.Persistent(table="Gmap3ToDoItemDependencies")
     @javax.jdo.annotations.Join(column="dependingId")
     @javax.jdo.annotations.Element(column="dependentId")
-    private SortedSet<Gmap3WicketToDoItem> dependencies = new TreeSet<>();
+    private SortedSet<Gmap3ToDoItem> dependencies = new TreeSet<>();
 
     @CollectionLayout(
             sortedBy = DependenciesComparator.class,
             render = RenderType.EAGERLY
     )
-    public SortedSet<Gmap3WicketToDoItem> getDependencies() {
+    public SortedSet<Gmap3ToDoItem> getDependencies() {
         return dependencies;
     }
 
-    public void setDependencies(final SortedSet<Gmap3WicketToDoItem> dependencies) {
+    public void setDependencies(final SortedSet<Gmap3ToDoItem> dependencies) {
         this.dependencies = dependencies;
     }
 
     
     @MemberOrder(name="dependencies", sequence="1")
-    public Gmap3WicketToDoItem add(final Gmap3WicketToDoItem toDoItem) {
+    public Gmap3ToDoItem add(final Gmap3ToDoItem toDoItem) {
         getDependencies().add(toDoItem);
         return this;
     }
-    public List<Gmap3WicketToDoItem> autoComplete0Add(final @MinLength(2) String search) {
-        final List<Gmap3WicketToDoItem> list = toDoItems.autoComplete(search);
+    public List<Gmap3ToDoItem> autoComplete0Add(final @MinLength(2) String search) {
+        final List<Gmap3ToDoItem> list = toDoItems.autoComplete(search);
         list.removeAll(getDependencies());
         list.remove(this);
         return list;
     }
 
-    public String disableAdd(final Gmap3WicketToDoItem toDoItem) {
+    public String disableAdd(final Gmap3ToDoItem toDoItem) {
         if(isComplete()) {
             return "Cannot add dependencies for items that are complete";
         }
         return null;
     }
     // validate the provided argument prior to invoking action
-    public String validateAdd(final Gmap3WicketToDoItem toDoItem) {
+    public String validateAdd(final Gmap3ToDoItem toDoItem) {
         if(getDependencies().contains(toDoItem)) {
             return "Already a dependency";
         }
@@ -305,26 +308,26 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     }
 
     @MemberOrder(name="dependencies", sequence="2")
-    public Gmap3WicketToDoItem remove(final Gmap3WicketToDoItem toDoItem) {
+    public Gmap3ToDoItem remove(final Gmap3ToDoItem toDoItem) {
         getDependencies().remove(toDoItem);
         return this;
     }
     // disable action dependent on state of object
-    public String disableRemove(final Gmap3WicketToDoItem toDoItem) {
+    public String disableRemove(final Gmap3ToDoItem toDoItem) {
         if(isComplete()) {
             return "Cannot remove dependencies for items that are complete";
         }
         return getDependencies().isEmpty()? "No dependencies to remove": null;
     }
     // validate the provided argument prior to invoking action
-    public String validateRemove(final Gmap3WicketToDoItem toDoItem) {
+    public String validateRemove(final Gmap3ToDoItem toDoItem) {
         if(!getDependencies().contains(toDoItem)) {
             return "Not a dependency";
         }
         return null;
     }
     // provide a drop-down
-    public Collection<Gmap3WicketToDoItem> choices0Remove() {
+    public Collection<Gmap3ToDoItem> choices0Remove() {
         return getDependencies();
     }
 
@@ -334,43 +337,103 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
 
     public static class Predicates {
         
-        public static Predicate<Gmap3WicketToDoItem> thoseOwnedBy(final String currentUser) {
-            return new Predicate<Gmap3WicketToDoItem>() {
-                @Override
-                public boolean apply(final Gmap3WicketToDoItem toDoItem) {
-                    return Objects.equal(toDoItem.getOwnedBy(), currentUser);
-                }
-            };
+        public static Predicate<Gmap3ToDoItem> thoseOwnedBy(final String currentUser) {
+            return toDoItem -> Objects.equal(toDoItem.getOwnedBy(), currentUser);
         }
 
-        public static Predicate<Gmap3WicketToDoItem> thoseCompleted(
+        public static Predicate<Gmap3ToDoItem> thoseCompleted(
                 final boolean completed) {
-            return new Predicate<Gmap3WicketToDoItem>() {
-                @Override
-                public boolean apply(final Gmap3WicketToDoItem t) {
-                    return Objects.equal(t.isComplete(), completed);
-                }
-            };
+            return t -> Objects.equal(t.isComplete(), completed);
         }
 
-        public static Predicate<Gmap3WicketToDoItem> thoseWithSimilarDescription(final String description) {
-            return new Predicate<Gmap3WicketToDoItem>() {
-                @Override
-                public boolean apply(final Gmap3WicketToDoItem t) {
-                    return t.getDescription().contains(description);
-                }
-            };
+        public static Predicate<Gmap3ToDoItem> thoseWithSimilarDescription(final String description) {
+            return t -> t.getDescription().contains(description);
         }
 
-        public static Predicate<Gmap3WicketToDoItem> thoseNot(final Gmap3WicketToDoItem toDoItem) {
-            return new Predicate<Gmap3WicketToDoItem>() {
-                @Override
-                public boolean apply(final Gmap3WicketToDoItem t) {
-                    return t != toDoItem;
-                }
-            };
+        public static Predicate<Gmap3ToDoItem> thoseNot(final Gmap3ToDoItem toDoItem) {
+            return t -> t != toDoItem;
         }
 
+    }
+
+    //endregion
+
+    //region > Routeable
+
+    @NotPersistent
+    private List<String> points = new ArrayList<>();
+
+    @Override
+    public List<GPoint> getRoute() {
+        final List<GPoint> route = new ArrayList<GPoint>();
+        for (String point : points) {
+            String[] s = point.split(";");
+            route.add(s[0] != null && s[1] != null ? new GPoint(Float
+                    .valueOf(s[1]), Float.valueOf(s[0])) : null);
+        }
+        return route;
+    }
+
+    @Programmatic
+    public void loadPointsFrom(final URL resource) {
+        InputStream inputStream = null;
+        final ByteSource byteSource = Resources.asByteSource(resource);
+
+        List sheetData = new ArrayList();
+        try {
+            inputStream = byteSource.openStream();
+            HSSFWorkbook workbook = new HSSFWorkbook(inputStream);
+            HSSFSheet sheet = workbook.getSheetAt(0);
+            Iterator rows = sheet.rowIterator();
+
+            while (rows.hasNext()) {
+                HSSFRow row = (HSSFRow) rows.next();
+                Iterator cells = row.cellIterator();
+                List data = new ArrayList();
+
+                while (cells.hasNext()) {
+                    HSSFCell cell = (HSSFCell) cells.next();
+                    data.add(cell);
+                }
+
+                sheetData.add(data);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
+        copyToPoints(sheetData, points);
+    }
+
+    private void copyToPoints(final List sheetData, final List<String> points) {
+
+        for (int i = 4; i < sheetData.size(); i++) {
+
+            final List list = (List) sheetData.get(i);
+
+            String point = "";
+            for (int j = 2; j < 4; j++) {
+
+                final Cell cell = (Cell) list.get(j);
+
+                if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+                    point = point + String.valueOf(cell.getNumericCellValue());
+                    point = point + ";";
+                } else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+                    point = point + cell.getRichStringCellValue();
+                    point = point + ";";
+                }
+            }
+            points.add(point);
+        }
     }
 
     //endregion
@@ -383,7 +446,7 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     }
         
     @Override
-    public int compareTo(final Gmap3WicketToDoItem other) {
+    public int compareTo(final Gmap3ToDoItem other) {
         return ObjectContracts.compare(this, other, "complete,description");
     }
 
@@ -405,83 +468,7 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     @javax.inject.Inject
     private LocationLookupService locationLookupService;
 
-    @NotPersistent
-    private List<String> points = new ArrayList<String>();
 
-	@Override
-	public List<GPoint> getRoute() {
-		final List<GPoint> route = new ArrayList<GPoint>();
-		for (String point : points) {
-			String[] s = point.split(";");
-			route.add(s[0] != null && s[1] != null ? new GPoint(Float
-					.valueOf(s[1]), Float.valueOf(s[0])) : null);
-		}
-		return route;
-	}
-
-	@Programmatic
-	public void loadingPoints() throws IOException {
-		List sheetData = new ArrayList();
-		FileInputStream fis = null;
-
-		try {
-			fis = new FileInputStream("route.xls");
-			HSSFWorkbook workbook = new HSSFWorkbook(fis);
-			HSSFSheet sheet = workbook.getSheetAt(0);
-			Iterator rows = sheet.rowIterator();
-
-			while (rows.hasNext()) {
-				HSSFRow row = (HSSFRow) rows.next();
-				Iterator cells = row.cellIterator();
-				List data = new ArrayList();
-
-				while (cells.hasNext()) {
-					HSSFCell cell = (HSSFCell) cells.next();
-					data.add(cell);
-				}
-
-				sheetData.add(data);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			if (fis != null) {
-				fis.close();
-			}
-		}
-		showExelData(sheetData);
-	}
-
-	@Programmatic
-	private void showExelData(List sheetData) {
-
-		for (int i = 4; i < sheetData.size(); i++) {
-
-			String point = "";
-
-			List list = (List) sheetData.get(i);
-
-			for (int j = 2; j < 4; j++) {
-
-				Cell cell = (Cell) list.get(j);
-
-				if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-
-					point = point + String.valueOf(cell.getNumericCellValue());
-					point = point + ";";
-
-				} else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
-
-					point = point + cell.getRichStringCellValue();
-					point = point + ";";
-
-				}
-			}
-
-			points.add(point);
-		}
-	}
     //endregion
 
 }
