@@ -18,18 +18,30 @@
  */
 package org.isisaddons.wicket.gmap3.fixture.dom;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.jdo.annotations.IdentityType;
+import javax.jdo.annotations.NotPersistent;
 import javax.jdo.annotations.VersionStrategy;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Ordering;
+
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.wicketstuff.gmap.api.GPoint;
 
 import org.apache.isis.applib.DomainObjectContainer;
 import org.apache.isis.applib.annotation.BookmarkPolicy;
@@ -41,6 +53,7 @@ import org.apache.isis.applib.annotation.MemberOrder;
 import org.apache.isis.applib.annotation.MinLength;
 import org.apache.isis.applib.annotation.Optionality;
 import org.apache.isis.applib.annotation.ParameterLayout;
+import org.apache.isis.applib.annotation.Programmatic;
 import org.apache.isis.applib.annotation.Property;
 import org.apache.isis.applib.annotation.PropertyLayout;
 import org.apache.isis.applib.annotation.RenderType;
@@ -51,6 +64,7 @@ import org.apache.isis.applib.util.TitleBuffer;
 
 import org.isisaddons.wicket.gmap3.cpt.applib.Locatable;
 import org.isisaddons.wicket.gmap3.cpt.applib.Location;
+import org.isisaddons.wicket.gmap3.cpt.applib.Routeable;
 import org.isisaddons.wicket.gmap3.cpt.service.LocationLookupService;
 
 @javax.jdo.annotations.PersistenceCapable(identityType=IdentityType.DATASTORE)
@@ -98,7 +112,7 @@ import org.isisaddons.wicket.gmap3.cpt.service.LocationLookupService;
         named = "ToDo Item",
         bookmarking = BookmarkPolicy.AS_ROOT
 )
-public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Locatable {
+public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Locatable, Routeable {
 
     //region > identification in the UI
 
@@ -391,6 +405,83 @@ public class Gmap3WicketToDoItem implements Comparable<Gmap3WicketToDoItem>, Loc
     @javax.inject.Inject
     private LocationLookupService locationLookupService;
 
+    @NotPersistent
+    private List<String> points = new ArrayList<String>();
+
+	@Override
+	public List<GPoint> getRoute() {
+		final List<GPoint> route = new ArrayList<GPoint>();
+		for (String point : points) {
+			String[] s = point.split(";");
+			route.add(s[0] != null && s[1] != null ? new GPoint(Float
+					.valueOf(s[1]), Float.valueOf(s[0])) : null);
+		}
+		return route;
+	}
+
+	@Programmatic
+	public void loadingPoints() throws IOException {
+		List sheetData = new ArrayList();
+		FileInputStream fis = null;
+
+		try {
+			fis = new FileInputStream("route.xls");
+			HSSFWorkbook workbook = new HSSFWorkbook(fis);
+			HSSFSheet sheet = workbook.getSheetAt(0);
+			Iterator rows = sheet.rowIterator();
+
+			while (rows.hasNext()) {
+				HSSFRow row = (HSSFRow) rows.next();
+				Iterator cells = row.cellIterator();
+				List data = new ArrayList();
+
+				while (cells.hasNext()) {
+					HSSFCell cell = (HSSFCell) cells.next();
+					data.add(cell);
+				}
+
+				sheetData.add(data);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (fis != null) {
+				fis.close();
+			}
+		}
+		showExelData(sheetData);
+	}
+
+	@Programmatic
+	private void showExelData(List sheetData) {
+
+		for (int i = 4; i < sheetData.size(); i++) {
+
+			String point = "";
+
+			List list = (List) sheetData.get(i);
+
+			for (int j = 2; j < 4; j++) {
+
+				Cell cell = (Cell) list.get(j);
+
+				if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+
+					point = point + String.valueOf(cell.getNumericCellValue());
+					point = point + ";";
+
+				} else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+
+					point = point + cell.getRichStringCellValue();
+					point = point + ";";
+
+				}
+			}
+
+			points.add(point);
+		}
+	}
     //endregion
 
 }

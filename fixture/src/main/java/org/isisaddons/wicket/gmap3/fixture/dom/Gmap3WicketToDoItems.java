@@ -18,9 +18,12 @@
  */
 package org.isisaddons.wicket.gmap3.fixture.dom;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import org.isisaddons.wicket.gmap3.cpt.applib.Location;
+import org.apache.isis.applib.DomainObjectContainer;
 import org.apache.isis.applib.annotation.Action;
 import org.apache.isis.applib.annotation.ActionLayout;
 import org.apache.isis.applib.annotation.BookmarkPolicy;
@@ -167,6 +170,12 @@ public class Gmap3WicketToDoItems {
          toDoItem.setLocation(
             new Location(51.5172+random(-0.05, +0.05), 0.1182 + random(-0.05, +0.05)));
         
+         try {
+            toDoItem.loadingPoints();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
         repositoryService.persistAndFlush(toDoItem);
 
         return toDoItem;
