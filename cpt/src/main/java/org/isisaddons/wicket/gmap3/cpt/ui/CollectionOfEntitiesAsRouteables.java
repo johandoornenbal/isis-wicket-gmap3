@@ -5,11 +5,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.wicket.AttributeModifier;
-import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.ResourceReference;
@@ -35,8 +32,8 @@ public class CollectionOfEntitiesAsRouteables extends PanelAbstract<EntityCollec
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String ID_MAP = "mapa";
-	private static final String INVISIBLE_CLASS = "collection-contents-as-routeables-invisible";
+	private static final String ID_MAP = "map";
+    private static final String INVISIBLE_CLASS = "collection-contents-as-routes-invisible";
 
     private final String apiKey;
 
@@ -70,23 +67,11 @@ public class CollectionOfEntitiesAsRouteables extends PanelAbstract<EntityCollec
 		}
 
 		addOrReplace(map);
-        applyCssVisibility(map, true);
-    
         addRoute(map, adapterList);
 	}
 
-	private static void applyCssVisibility(final Component component, final boolean visible) {
-        final AttributeModifier modifier =  
-                visible 
-                    ? new AttributeModifier("class", String.valueOf(component.getMarkupAttributes().get("class")).replaceFirst(INVISIBLE_CLASS, "")) 
-                    : new AttributeAppender("class", " " +
-                            INVISIBLE_CLASS);
-        component.add(modifier);
-    }
-
 	private void addRoute(final GMap map, final List<ObjectAdapter> adapterList)
     {
-    	//List<GLatLng> glatLngsToShow = Lists.newArrayList();
     	for (ObjectAdapter adapter : adapterList) {
     		
     		final GPolyline gPolyline = createGPolyline(map, adapter);
