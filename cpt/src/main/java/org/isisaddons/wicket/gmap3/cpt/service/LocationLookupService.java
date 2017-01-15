@@ -24,6 +24,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
@@ -34,7 +35,10 @@ import org.jdom2.input.SAXBuilder;
 
 import org.apache.isis.applib.annotation.DomainService;
 import org.apache.isis.applib.annotation.Programmatic;
+import org.apache.isis.core.commons.config.IsisConfiguration;
+import org.apache.isis.core.runtime.system.context.IsisContext;
 
+import org.isisaddons.wicket.gmap3.cpt.applib.Gmap3ApplibConstants;
 import org.isisaddons.wicket.gmap3.cpt.applib.Location;
 
 @DomainService
@@ -43,7 +47,7 @@ public class LocationLookupService {
     // Greenwich Royal Observatory (unused)
     private static final Location DEFAULT_VALUE = new Location(51.4777479, 0.0d);
 
-    private static final String BASEURL = "http://maps.googleapis.com/maps/api/geocode/";
+    private static final String BASEURL = "https://maps.googleapis.com/maps/api/geocode/";
     private static final String MODE = "xml";
     private static final int TIMEOUT_SECONDS = 5;
 
@@ -58,10 +62,12 @@ public class LocationLookupService {
         CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setDefaultRequestConfig(requestConfig)
                 .useSystemProperties()
+                .setSSLHostnameVerifier(new DefaultHostnameVerifier(null)) //this line is needed because of Exception: Host name 'www.googleapis.com' does not match the certificate subject provided by the peer
                 .build();
 
         try {
-            String uri = BASEURL + MODE + "?address=" + URLEncoder.encode(description, "UTF-8") + "&sensor=false";
+            String apiKey = getConfiguration().getString(Gmap3ApplibConstants.API_KEY);
+            String uri = BASEURL + MODE + "?address=" + URLEncoder.encode(description, "UTF-8") + "&sensor=false&key=" + apiKey;
             HttpGet httpGet = new HttpGet(uri);
             CloseableHttpResponse response = httpClient.execute(httpGet);
 
@@ -83,5 +89,9 @@ public class LocationLookupService {
         String lat = root.getChild("result").getChild("geometry").getChild("location").getChildTextTrim("lat");
         String lon = root.getChild("result").getChild("geometry").getChild("location").getChildTextTrim("lng");
         return Location.fromString(lat + ";" + lon);
+    }
+
+    protected IsisConfiguration getConfiguration() {
+        return IsisContext.getSessionFactory().getConfiguration();
     }
 }
